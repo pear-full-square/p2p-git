@@ -4,7 +4,7 @@ import '../typedefs.js'
 import { _readCommit } from '../commands/readCommit.js'
 import { NotFoundError } from '../errors/NotFoundError.js'
 import { GitRefManager } from '../managers/GitRefManager.js'
-import { GitShallowManager } from '../managers/GitShallowManager.js'
+// shallow clones not supported — empty set
 import { compareAge } from '../utils/compareAge.js'
 import { resolveFileIdInTree } from '../utils/resolveFileIdInTree.js'
 import { resolveFilepath } from '../utils/resolveFilepath.js'
@@ -50,7 +50,7 @@ export async function _log({
   // TODO: In the future, we may want to have an API where we return a
   // async iterator that emits commits.
   const commits = []
-  const shallowCommits = await GitShallowManager.read({ fs, gitdir })
+  const shallowCommits = new Set()
   const oid = await GitRefManager.resolve({ fs, gitdir, ref })
   const tips = [await _readCommit({ fs, cache, gitdir, oid })]
   let lastFileOid

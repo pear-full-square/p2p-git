@@ -2,7 +2,7 @@
 import { MaxDepthError } from '../errors/MaxDepthError.js'
 import { MissingParameterError } from '../errors/MissingParameterError.js'
 import { ObjectTypeError } from '../errors/ObjectTypeError.js'
-import { GitShallowManager } from '../managers/GitShallowManager.js'
+// shallow clones not supported — empty set
 import { GitCommit } from '../models/GitCommit.js'
 import { _readObject } from '../storage/readObject.js'
 
@@ -25,7 +25,7 @@ export async function _isDescendent({
   ancestor,
   depth,
 }) {
-  const shallows = await GitShallowManager.read({ fs, gitdir })
+  const shallows = new Set()
   if (!oid) {
     throw new MissingParameterError('oid')
   }

@@ -2,7 +2,6 @@ import { InternalError } from '../errors/InternalError.js'
 import { NotFoundError } from '../errors/NotFoundError.js'
 import { GitObject } from '../models/GitObject.js'
 import { readObjectLoose } from '../storage/readObjectLoose.js'
-import { readObjectPacked } from '../storage/readObjectPacked.js'
 import { inflate } from '../utils/inflate.js'
 import { shasum } from '../utils/shasum.js'
 
@@ -21,37 +20,17 @@ export async function _readObject({
   oid,
   format = 'content',
 }) {
-  // Curry the current read method so that the packfile un-deltification
-  // process can acquire external ref-deltas.
-  const getExternalRefDelta = oid => _readObject({ fs, cache, gitdir, oid })
-
   let result
   // Empty tree - hard-coded so we can use it as a shorthand.
-  // Note: I think the canonical git implementation must do this too because
-  // `git cat-file -t 4b825dc642cb6eb9a060e54bf8d69288fbee4904` prints "tree" even in empty repos.
   if (oid === '4b825dc642cb6eb9a060e54bf8d69288fbee4904') {
     result = { format: 'wrapped', object: Buffer.from(`tree 0\x00`) }
   }
-  // Look for it in the loose object directory.
+  // Look for it in the loose object directory (loose objects only — no packfiles).
   if (!result) {
     result = await readObjectLoose({ fs, gitdir, oid })
   }
-  // Check to see if it's in a packfile.
   if (!result) {
-    result = await readObjectPacked({
-      fs,
-      cache,
-      gitdir,
-      oid,
-      getExternalRefDelta,
-    })
-
-    if (!result) {
-      throw new NotFoundError(oid)
-    }
-
-    // Directly return packed result, as specified: packed objects always return the 'content' format.
-    return result
+    throw new NotFoundError(oid)
   }
 
   // Loose objects are always deflated, return early
