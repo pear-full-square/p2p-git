@@ -1,7 +1,8 @@
 # p2p-git — Stripped Git Plumbing for P2P
 
-isomorphic-git stripped to plumbing only. The git engine for Mycelium — object
-operations, refs, merge, log, walk. No porcelain, no network, no packfiles.
+isomorphic-git stripped to plumbing only — a minimal P2P footprint. Object
+operations, refs, merge, log, walk. No porcelain, no network, no packfiles,
+no working tree.
 
 **Origin:** Forked from [bare-for-pear/isomorphic-git](https://github.com/bare-for-pear/isomorphic-git)
 (itself a fork of [isomorphic-git](https://github.com/isomorphic-git/isomorphic-git), MIT).
@@ -9,11 +10,26 @@ operations, refs, merge, log, walk. No porcelain, no network, no packfiles.
 ## What This Is
 
 A stripped git engine for P2P-native use. Takes isomorphic-git and removes
-everything the P2P substrate provides natively or that Mycelium doesn't need.
-The remaining code is the object-level git operations — read, write, navigate,
-merge, commit.
+everything the P2P substrate provides natively or that isn't needed for
+object-level git. The remaining code: read, write, navigate, merge, commit
+— all at the git object level.
 
 Entry point: `src/plumbing.js` (41 exports, down from 70 in the original).
+
+## No Working Tree
+
+The standard git workflow (edit files → add → commit) is replaced by direct
+object construction: create blobs → compose trees → commit. There is no
+filesystem working tree, no `git add`, no index staging. The write path is
+entirely programmatic — blobs and trees are built in memory and written
+directly to the object store.
+
+This means:
+- No filesystem materialisation needed for git operations
+- The git object store (on any fs backend) is the only state
+- Trees are constructed explicitly, not derived from a working directory
+- Suitable for P2P environments where the object store lives on Hyperdrive
+  and there is no local filesystem
 
 ## What Was Removed
 
@@ -63,7 +79,7 @@ import fs from 'bare-fs'
 
 await git.init({ fs, dir: '/path/to/repo' })
 
-// The plumbing write path — no working tree, no add
+// Direct object construction — no working tree, no add
 const blobOid = await git.writeBlob({ fs, dir, blob: new Uint8Array(content) })
 const treeOid = await git.writeTree({ fs, dir, tree: [
   { mode: '100644', path: 'file.txt', oid: blobOid, type: 'blob' }
@@ -83,7 +99,7 @@ Note: `writeBlob`, `writeTree`, `writeCommit` return OID strings directly
 writeTree, writeCommit, writeRef, readBlob, readTree, readCommit, resolveRef,
 log, walk, branch, listBranches.
 
-The stripping was the learning exercise — every removed file was understood
+The stripping was a learning exercise — every removed file was understood
 before removal. The dependency structure is mapped: storage layer (loose only),
 ref manager (packed-refs stubbed), merge (index retained), walk (repo walker
 only).
@@ -93,11 +109,7 @@ repos.
 
 ## Intention
 
-Foundation for the Mycelium git component
-([pear-full-square/mycelium](https://github.com/pear-full-square/mycelium)).
-Mycelium calls into p2p-git for object operations and wraps it with fabric
-semantics: XPath navigation, CRUD, the Kafka record boundary mapper.
-
-Further stripping may continue — ~130 utility files could be pruned, and the
-merge/index entanglement is a simplification target. The code is understood
-well enough to make changes confidently when pressure surfaces.
+A minimal git engine for P2P-native applications. Further stripping may
+continue — ~130 utility files could be pruned, and the merge/index
+entanglement is a simplification target. The code is understood well enough
+to make changes confidently when pressure surfaces.
