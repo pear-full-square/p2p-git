@@ -51,6 +51,9 @@ import { getConfig } from './api/getConfig.js'
 import { getConfigAll } from './api/getConfigAll.js'
 import { setConfig } from './api/setConfig.js'
 
+// Index (transaction staging)
+import { updateIndex } from './api/updateIndex.js'
+
 // Utility
 import { init } from './api/init.js'
 import { findRoot } from './api/findRoot.js'
@@ -76,6 +79,8 @@ export {
   merge,
   // Navigation
   walk, TREE,
+  // Index (transaction staging)
+  updateIndex,
   // Config
   getConfig, getConfigAll, setConfig,
   // Utility
