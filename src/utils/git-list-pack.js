@@ -82,15 +82,17 @@ async function parseHeader(reader) {
   let ofs
   let reference
   if (type === 6) {
-    let shift = 0
-    ofs = 0
+    // Big-endian, with one added at each continuation (git's offset
+    // encoding): ofs is the distance back to the base object.
     const bytes = []
-    do {
+    byte = await reader.byte()
+    bytes.push(byte)
+    ofs = byte & 0b01111111
+    while (byte & 0b10000000) {
       byte = await reader.byte()
-      ofs |= (byte & 0b01111111) << shift
-      shift += 7
       bytes.push(byte)
-    } while (byte & 0b10000000)
+      ofs = (ofs + 1) * 128 + (byte & 0b01111111)
+    }
     reference = Buffer.from(bytes)
   }
   if (type === 7) {
