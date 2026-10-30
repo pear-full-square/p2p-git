@@ -1,7 +1,7 @@
 /**
  * Hyperdrive fs adapter for isomorphic-git.
  *
- * Maps isomorphic-git's fs interface (8 methods) to Hyperdrive v11+ operations.
+ * Maps isomorphic-git's fs interface (10 methods) to Hyperdrive v11+ operations.
  * Provides a `promises` property so isomorphic-git uses the promise API.
  *
  * Usage:
@@ -17,7 +17,8 @@ class Stats {
     this._entry = entry
     this._isFile = entry && entry.value && entry.value.blob != null
     this._isSymlink = entry && entry.value && entry.value.linkname != null
-    this._isDir = entry != null && !this._isFile && !this._isSymlink
+    // No entry: an implicit folder (a Hyperdrive keeps no entries for them)
+    this._isDir = !this._isFile && !this._isSymlink
   }
 
   isFile () { return this._isFile }
@@ -122,6 +123,16 @@ export function createFs (drive) {
         throw enoent(path)
       }
       return new Stats(entry)
+    },
+
+    async readlink (path) {
+      const entry = await drive.entry(path)
+      if (!entry || entry.value.linkname == null) throw enoent(path)
+      return entry.value.linkname
+    },
+
+    async symlink (target, path) {
+      await drive.symlink(path, target)
     },
 
     async readdir (path) {
